@@ -7,4 +7,4 @@ class Filter(object):
         pass
 
     def apply(self, img, params):
-        return cv2.bitwise_not(img, img)
+        return cv2.bitwise_not(img)
