@@ -18,4 +18,4 @@ class Filter(object):
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         canny = cv2.Canny(gray, self.thresh1, self.thresh2)
         inverse = cv2.bitwise_not(canny)
-        return inverse
+        return cv2.cvtColor(inverse, cv2.COLOR_GRAY2BGR)
