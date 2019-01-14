@@ -153,9 +153,9 @@ class ThreadedHTTPServer(ThreadingMixIn, HTTPSAuthServer):
         except KeyboardInterrupt:
             self._camera.release()
 
-def serve_https(path, address, port, users, passwords, keys,
+def serve_https(path, bind, port, users, passwords, keys,
                 servercert, cacert, fps, HandlerClass=CamHandler):
-    server = ThreadedHTTPServer(path,  (address, port), fps, HandlerClass)
+    server = ThreadedHTTPServer(path,  (bind, port), fps, HandlerClass)
     server.set_auth(users, passwords, keys)
     server.set_certs(servercert, cacert)
     server.daemon_threads = True
@@ -167,7 +167,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='HTTPS Motion JPEG streaming server with OpenCV')
     parser.add_argument('path', help='camera number or filepath or url')
     parser.add_argument('port', nargs='?', type=int, default=8000)
-    parser.add_argument('-a', '--address', default='')
+    parser.add_argument('-b', '--bind', default='', metavar='ADDRESS')
     parser.add_argument('-u', '--users', nargs='*')
     parser.add_argument('-p', '--passwords', nargs='*')
     parser.add_argument('-k', '--keys', nargs='*')
@@ -176,5 +176,5 @@ if __name__ == '__main__':
     parser.add_argument('-f', '--fps', type=float)
     args = parser.parse_args()
 
-    serve_https(args.path, args.address, args.port, args.users, args.passwords,
+    serve_https(args.path, args.bind, args.port, args.users, args.passwords,
                 args.keys, args.servercert, args.cacert, args.fps)
