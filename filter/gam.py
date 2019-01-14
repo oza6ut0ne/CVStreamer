@@ -12,8 +12,8 @@ class Filter(object):
         except (KeyError, ValueError, IndexError):
             self.gamma = 2.0
 
-    def apply(self, img, params):
+    def apply(self, img):
         lookup_table = np.zeros((256, 1), dtype=np.uint8)
         for i in range(256):
             lookup_table[i][0] = 255 * pow(float(i)/255, 1.0/self.gamma)
-        return  cv2.LUT(img, lookup_table)                          
+        return  cv2.LUT(img, lookup_table)

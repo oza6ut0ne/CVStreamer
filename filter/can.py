@@ -14,7 +14,7 @@ class Filter(object):
         except (KeyError, ValueError, IndexError):
             self.thresh2 = 110
 
-    def apply(self, img, params):
+    def apply(self, img):
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         canny = cv2.Canny(gray, self.thresh1, self.thresh2)
         inverse = cv2.bitwise_not(canny)

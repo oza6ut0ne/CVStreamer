@@ -27,7 +27,7 @@ class Filter(object):
         self.lut = self.lut.astype(np.uint8)
 
     def shadow(self, img):
-        return  cv2.LUT(img, self.lut)                          
+        return  cv2.LUT(img, self.lut)
 
     def screen(self, img1, img2):
         inv1 = cv2.bitwise_not(img1)
@@ -36,7 +36,7 @@ class Filter(object):
         mul = mul.astype(np.uint8)
         return cv2.bitwise_not(mul)
 
-    def apply(self, img, params):
+    def apply(self, img):
         copy = self.shadow(img)
         copy = cv2.GaussianBlur(copy, (0, 0), self.rad)
         return self.screen(copy, img)

@@ -21,7 +21,7 @@ class Filter(object):
 
         self.bsub = cv2.createBackgroundSubtractorMOG2(detectShadows=False, varThreshold=varThreshold)
 
-    def apply(self, img, params):
+    def apply(self, img):
         height, width, _ = img.shape
         tile = np.tile(np.uint8(np.asarray([0, 0, 255])), (height, width, 1))
         mask = self.bsub.apply(img, learningRate=self.learningRate)

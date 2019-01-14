@@ -1,4 +1,3 @@
-import collections
 import cv2
 import http
 import importlib
@@ -8,20 +7,22 @@ import sys
 import threading
 import time
 import urllib
+from collections import OrderedDict
 from socketserver import ThreadingMixIn
 from SimpleHTTPSAuthServer3 import HTTPSAuthServer, AuthHandler
 
 class CamHandler(AuthHandler):
     def __init__(self, request, client_address, server):
         self.html_404_page = '<h1>NOT FOUND</h1>'
+        self.boundary = '--jpgboundary'
         super().__init__(request, client_address, server)
 
     def get_html(self, img_src='cam.mjpg'):
         return '<img src="{}"/>'.format(img_src)
 
-    def parse_qs(self, qs, keep_blank_values=False, strict_parsing=False,
-                 encoding='utf-8', errors='replace'):
-        parsed_result = collections.OrderedDict()
+    def parse_ordered_qs(self, qs, keep_blank_values=False, strict_parsing=False,
+                         encoding='utf-8', errors='replace'):
+        parsed_result = OrderedDict()
         pairs = urllib.parse.parse_qsl(qs, keep_blank_values, strict_parsing,
                                        encoding=encoding, errors=errors)
         for name, value in pairs:
@@ -37,72 +38,80 @@ class CamHandler(AuthHandler):
 
         parsed_url = urllib.parse.urlparse(self.path)
         dirpath, filename = os.path.split(parsed_url.path)
-        query = self.parse_qs(parsed_url.query, keep_blank_values=True)
+        query = self.parse_ordered_qs(parsed_url.query, keep_blank_values=True)
         root, ext = os.path.splitext(filename)
+
         if filename.endswith('.mjpg'):
-            self.send_response(http.client.OK)
-            self.send_header('Content-type', 'multipart/x-mixed-replace; boundary=--jpgboundary')
-            self.end_headers()
-
-            filters = collections.OrderedDict()
-            for key in query:
-                try:
-                    sys.dont_write_bytecode = True
-                    filter_module = importlib.import_module('filter.' + key)
-                    filter = filter_module.Filter(query[key])
-                    filters[filter] = query[key]
-                    sys.modules.pop('filter.' + key)
-                except ModuleNotFoundError as e:
-                    print(e)
-                except AttributeError as e:
-                    sys.modules.pop('filter.' + key)
-                    print(e)
-                finally:
-                    sys.dont_write_bytecode = False
-
-            while True:
-                try:
-                    img = self.server.read_frame()
-                    try:
-                        m = re.match('([\d]+)x([\d]+)', root)
-                        if m:
-                            size = int(m.group(1)), int(m.group(2))
-                            img = cv2.resize(img, size)
-                    except:
-                        pass
-                    for filter, params in filters.items():
-                        try:
-                            img = filter.apply(img, params)
-                        except AttributeError:
-                            pass
-                    ret, jpg = cv2.imencode('.jpg', img)
-                    if not ret:
-                        raise RuntimeError('Could not encode img to JPEG')
-                    jpg_bytes = jpg.tobytes()
-                    self.wfile.write("--jpgboundary\r\n".encode())
-                    self.send_header('Content-type', 'image/jpeg')
-                    self.send_header('Content-length', len(jpg_bytes))
-                    self.end_headers()
-                    self.wfile.write(jpg_bytes)
-                    time.sleep(self.server.read_delay)
-                except (IOError, ConnectionError):
-                    break
+            self.send_mjpg(query, root)
         elif filename.endswith(('.html', '.htm')):
-            self.send_response(http.client.OK)
-            self.send_header('Content-type', 'text/html')
-            self.end_headers()
-            src = dirpath
-            if ext:
-                src += root
-            src += '.mjpg'
-            if parsed_url.query:
-                src += '?' + parsed_url.query
-            self.wfile.write(self.get_html(img_src=src).encode())
+            self.send_html(parsed_url, dirpath, query, root, ext)
         else:
             self.send_response(http.client.NOT_FOUND)
             self.send_header('Content-type', 'text/html')
             self.end_headers()
             self.wfile.write(self.html_404_page.encode())
+
+    def send_html(self, parsed_url, dirpath, query, root, ext):
+        self.send_response(http.client.OK)
+        self.send_header('Content-type', 'text/html')
+        self.end_headers()
+        src = dirpath
+        if ext:
+            src += root
+        src += '.mjpg'
+        if parsed_url.query:
+            src += '?' + parsed_url.query
+        self.wfile.write(self.get_html(img_src=src).encode())
+
+
+    def send_mjpg(self, query, root):
+        self.send_response(http.client.OK)
+        self.send_header('Content-type', 'multipart/x-mixed-replace; boundary=' + self.boundary)
+        self.end_headers()
+        filters = []
+        for key in query:
+            module_name = 'filter.' + key
+            try:
+                sys.dont_write_bytecode = True
+                filter_module = importlib.import_module(module_name)
+                filter = filter_module.Filter(query[key])
+                filters.append(filter)
+                sys.modules.pop(module_name)
+            except ModuleNotFoundError as e:
+                print(e)
+            except AttributeError as e:
+                sys.modules.pop(module_name)
+                print(e)
+            finally:
+                sys.dont_write_bytecode = False
+
+        while True:
+            try:
+                img = self.server.read_frame()
+                try:
+                    m = re.match('([\d]+)x([\d]+)', root)
+                    if m:
+                        size = int(m.group(1)), int(m.group(2))
+                        img = cv2.resize(img, size)
+                except:
+                    pass
+                for filter in filters:
+                    try:
+                        img = filter.apply(img)
+                    except AttributeError:
+                        pass
+                ret, jpg = cv2.imencode('.jpg', img)
+                if not ret:
+                    raise RuntimeError('Could not encode img to JPEG')
+                jpg_bytes = jpg.tobytes()
+                self.wfile.write((self.boundary + '\r\n').encode())
+                self.send_header('Content-type', 'image/jpeg')
+                self.send_header('Content-length', len(jpg_bytes))
+                self.end_headers()
+                self.wfile.write(jpg_bytes)
+                time.sleep(self.server.read_delay)
+            except (IOError, ConnectionError):
+                break
 
 
 class ThreadedHTTPServer(ThreadingMixIn, HTTPSAuthServer):
