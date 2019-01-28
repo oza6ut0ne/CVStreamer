@@ -8,8 +8,7 @@ import threading
 import time
 import urllib
 from collections import OrderedDict
-from socketserver import ThreadingMixIn
-from SimpleHTTPSAuthServer3 import HTTPSAuthServer, AuthHandler
+from SimpleHTTPSAuthServer3 import ThreadedHTTPSAuthServer, AuthHandler
 
 class CamHandler(AuthHandler):
     def __init__(self, request, client_address, server):
@@ -114,12 +113,11 @@ class CamHandler(AuthHandler):
                 break
 
 
-class ThreadedHTTPServer(ThreadingMixIn, HTTPSAuthServer):
+class CamServer(ThreadedHTTPSAuthServer):
     """Handle requests in a separate thread."""
     def __init__(self, capture_path, server_address, fps,
                  RequestHandlerClass, bind_and_activate=True):
-        HTTPSAuthServer.__init__(self, server_address, RequestHandlerClass, bind_and_activate)
-        ThreadingMixIn.__init__(self)
+        super().__init__(server_address, RequestHandlerClass, bind_and_activate)
         try:
             capture_path = int(capture_path)
         except (TypeError, ValueError):
@@ -155,10 +153,10 @@ class ThreadedHTTPServer(ThreadingMixIn, HTTPSAuthServer):
 
 def serve_https(path, bind, port, users, passwords, keys,
                 servercert, cacert, fps, HandlerClass=CamHandler):
-    server = ThreadedHTTPServer(path,  (bind, port), fps, HandlerClass)
+    server = CamServer(path, (bind, port), fps, HandlerClass)
+    server.daemon_threads = True
     server.set_auth(users, passwords, keys)
     server.set_certs(servercert, cacert)
-    server.daemon_threads = True
     server.serve_forever()
 
 
