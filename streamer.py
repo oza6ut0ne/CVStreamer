@@ -8,7 +8,7 @@ import threading
 import time
 import urllib
 from collections import OrderedDict
-from SimpleHTTPSAuthServer3 import ThreadedHTTPSAuthServer, AuthHandler
+from SimpleHTTPSAuthServer import ThreadedHTTPSAuthServer, AuthHandler
 
 class CamHandler(AuthHandler):
     def __init__(self, request, client_address, server):
