@@ -4,6 +4,7 @@ class Filter(object):
     '''apply Canny edge detection'''
 
     def __init__(self, params):
+        self.params = params
         try:
             self.thresh1 = float(params[0])
         except (KeyError, ValueError, IndexError):

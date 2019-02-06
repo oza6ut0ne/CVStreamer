@@ -5,6 +5,7 @@ class Filter(object):
     '''apply glow effect'''
 
     def __init__(self, params):
+        self.params = params
         try:
             self.thresh = int(params[0])
             if self.thresh < 0:

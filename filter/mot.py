@@ -6,6 +6,7 @@ class Filter(object):
     '''detects motions with cv2.BackgroundSubtractorMOG2'''
 
     def __init__(self, params):
+        self.params = params
         try:
             varThreshold = float(params[0])
             if varThreshold <= 0:

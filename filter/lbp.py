@@ -6,6 +6,7 @@ class Filter(object):
     '''calc local binary pattern'''
 
     def __init__(self, params):
+        self.params = params
         self.lbp_type = params[0]
 
     def apply(self, img):

@@ -62,20 +62,18 @@ class CamHandler(AuthHandler):
             src += '?' + parsed_url.query
         self.wfile.write(self.get_html(img_src=src).encode())
 
-
     def send_mjpg(self, query, root):
         self.send_response(http.client.OK)
         self.send_header('Content-type', 'multipart/x-mixed-replace; boundary=' + self.boundary)
         self.end_headers()
-        filters = []
+        filters = {}
         for key in query:
             module_name = 'filter.' + key
             try:
                 sys.dont_write_bytecode = True
                 filter_module = importlib.import_module(module_name)
                 filter = filter_module.Filter(query[key])
-                filters.append(filter)
-                sys.modules.pop(module_name)
+                filters[filter] = os.stat(filter_module.__file__)
             except ModuleNotFoundError as e:
                 print(e)
             except AttributeError as e:
@@ -94,11 +92,26 @@ class CamHandler(AuthHandler):
                         img = cv2.resize(img, size)
                 except:
                     pass
+
+                new_filters = {}
                 for filter in filters:
                     try:
+                        module = sys.modules[filter.__module__]
+                        stat = os.stat(module.__file__)
+                        if filters[filter] != stat:
+                            sys.dont_write_bytecode = True
+                            module = importlib.reload(module)
+                            filter = module.Filter(filter.params)
+                            sys.dont_write_bytecode = False
+                        new_filters[filter] = stat
                         img = filter.apply(img)
-                    except AttributeError:
-                        pass
+                    except FileNotFoundError as e:
+                        print(e)
+                    except ModuleNotFoundError as e:
+                        print(e)
+                    except AttributeError as e:
+                        print(e)
+                filters = new_filters
                 ret, jpg = cv2.imencode('.jpg', img)
                 if not ret:
                     raise RuntimeError('Could not encode img to JPEG')

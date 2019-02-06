@@ -5,6 +5,7 @@ class Filter(object):
     '''apply gamma collection'''
 
     def __init__(self, params):
+        self.params = params
         try:
             self.gamma = float(params[0])
             if self.gamma == 0:
