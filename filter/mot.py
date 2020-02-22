@@ -18,19 +18,13 @@ class Filter(object):
             if self.learningRate <= 0:
                 self.learningRate = 0.01
         except (KeyError, ValueError, IndexError):
-                self.learningRate = 0.01
+            self.learningRate = 0.01
 
-        self.bsub = cv2.createBackgroundSubtractorMOG2(detectShadows=False, varThreshold=varThreshold)
+        self.subtor = cv2.createBackgroundSubtractorMOG2(detectShadows=False, varThreshold=varThreshold)
 
     def apply(self, img):
-        height, width, _ = img.shape
-        tile = np.tile(np.uint8(np.asarray([0, 0, 255])), (height, width, 1))
-        mask = self.bsub.apply(img, learningRate=self.learningRate)
-
+        mask = self.subtor.apply(img, learningRate=self.learningRate)
         if (int(time.time() * 1000) % 400) < 200:
-            filter = cv2.bitwise_and(tile, tile, mask=mask)
-            result = cv2.bitwise_or(img, filter)
-        else:
-            result = img
+            img[:, :, 2] |= mask
 
-        return result
+        return img
