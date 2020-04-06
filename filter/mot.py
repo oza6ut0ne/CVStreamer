@@ -15,8 +15,6 @@ class Filter(object):
                 varThreshold = 16
         try:
             self.learningRate = float(params[1])
-            if self.learningRate <= 0:
-                self.learningRate = 0.01
         except (KeyError, ValueError, IndexError):
             self.learningRate = 0.01
 
