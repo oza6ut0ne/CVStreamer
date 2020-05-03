@@ -72,6 +72,7 @@ class CamHandler(AuthHandler):
             try:
                 sys.dont_write_bytecode = True
                 filter_module = importlib.import_module(module_name)
+                filter_module = importlib.reload(filter_module)
                 filter = filter_module.Filter(query[key])
                 filters[filter] = os.stat(filter_module.__file__)
             except ModuleNotFoundError as e:
