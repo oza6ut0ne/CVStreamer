@@ -1,4 +1,3 @@
-import cv2
 import http
 import importlib
 import os
@@ -8,7 +7,13 @@ import threading
 import time
 import urllib
 from collections import OrderedDict
+from pathlib import Path
+
+import cv2
 from SimpleHTTPSAuthServer import ThreadedHTTPSAuthServer, AuthHandler
+
+sys.path.insert(0, str(Path(__file__).resolve().parent / 'extra_filter'))
+
 
 class CamHandler(AuthHandler):
     def __init__(self, request, client_address, server):
