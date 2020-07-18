@@ -25,10 +25,12 @@ class CamHandler(AuthHandler):
     def get_html(self, img_src='cam.mjpg'):
         return '<img src="{}"/>'.format(img_src)
 
-    def parse_ordered_qs(self, qs, keep_blank_values=False, strict_parsing=False,
-                         encoding='utf-8', errors='replace'):
+    def parse_ordered_qs(self, qs, keep_blank_values=False,
+                         strict_parsing=False, encoding='utf-8',
+                         errors='replace'):
         parsed_result = OrderedDict()
-        pairs = urllib.parse.parse_qsl(qs, keep_blank_values, strict_parsing,
+        pairs = urllib.parse.parse_qsl(qs, keep_blank_values,
+                                       strict_parsing,
                                        encoding=encoding, errors=errors)
         for name, value in pairs:
             if name in parsed_result:
@@ -43,7 +45,8 @@ class CamHandler(AuthHandler):
 
         parsed_url = urllib.parse.urlparse(self.path)
         dirpath, filename = os.path.split(parsed_url.path)
-        query = self.parse_ordered_qs(parsed_url.query, keep_blank_values=True)
+        query = self.parse_ordered_qs(
+            parsed_url.query, keep_blank_values=True)
         root, ext = os.path.splitext(filename)
 
         if filename.endswith('.mjpg'):
@@ -70,7 +73,9 @@ class CamHandler(AuthHandler):
 
     def send_mjpg(self, query, root):
         self.send_response(http.client.OK)
-        self.send_header('Content-type', 'multipart/x-mixed-replace; boundary=' + self.boundary)
+        self.send_header(
+            'Content-type',
+            'multipart/x-mixed-replace; boundary=' + self.boundary)
         self.end_headers()
         filters = {}
         for key in query:
@@ -137,7 +142,8 @@ class CamServer(ThreadedHTTPSAuthServer):
     """Handle requests in a separate thread."""
     def __init__(self, capture_path, server_address, fps,
                  RequestHandlerClass, bind_and_activate=True):
-        super().__init__(server_address, RequestHandlerClass, bind_and_activate)
+        super().__init__(
+            server_address, RequestHandlerClass, bind_and_activate)
         try:
             capture_path = int(capture_path)
         except (TypeError, ValueError):
@@ -149,7 +155,8 @@ class CamServer(ThreadedHTTPSAuthServer):
 
     def open_video(self):
         if not self._camera.open(self._capture_path):
-            raise IOError('Could not open Camera {}'.format(self._capture_path))
+            raise IOError(
+                'Could not open Camera {}'.format(self._capture_path))
         if self.fps is None:
             self.fps = self._camera.get(cv2.CAP_PROP_FPS)
             if self.fps == 0:
@@ -188,7 +195,8 @@ def serve_https(path, bind=None, port=8000, users=None, passwords=None,
 
 if __name__ == '__main__':
     import argparse
-    parser = argparse.ArgumentParser(description='HTTPS Motion JPEG streaming server with OpenCV')
+    parser = argparse.ArgumentParser(
+        description='HTTPS Motion JPEG streaming server with OpenCV')
     parser.add_argument('path', help='camera number or filepath or url')
     parser.add_argument('port', nargs='?', type=int, default=8000)
     parser.add_argument('-b', '--bind', metavar='ADDRESS')
