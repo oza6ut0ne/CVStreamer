@@ -2,6 +2,7 @@ import http
 import importlib
 import os
 import re
+import socket
 import sys
 import threading
 import time
@@ -170,10 +171,16 @@ class CamServer(ThreadedHTTPSAuthServer):
         except KeyboardInterrupt:
             self._camera.release()
 
-def serve_https(path, bind, port, users, passwords, keys,
-                servercert, cacert, fps, HandlerClass=CamHandler):
-    server = CamServer(path, (bind, port), fps, HandlerClass)
-    server.daemon_threads = True
+def serve_https(path, bind=None, port=8000, users=None, passwords=None,
+                keys=None, servercert=None, cacert=None,
+                fps=None, HandlerClass=CamHandler):
+
+    addrinfo = socket.getaddrinfo(
+        bind, port, 0, socket.SOCK_STREAM, 0, socket.AI_PASSIVE)[0]
+    CamServer.address_family = addrinfo[0]
+    addr = addrinfo[4]
+
+    server = CamServer(path, addr, fps, HandlerClass)
     server.set_auth(users, passwords, keys)
     server.set_certs(servercert, cacert)
     server.serve_forever()
@@ -184,7 +191,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='HTTPS Motion JPEG streaming server with OpenCV')
     parser.add_argument('path', help='camera number or filepath or url')
     parser.add_argument('port', nargs='?', type=int, default=8000)
-    parser.add_argument('-b', '--bind', default='', metavar='ADDRESS')
+    parser.add_argument('-b', '--bind', metavar='ADDRESS')
     parser.add_argument('-u', '--users', nargs='*')
     parser.add_argument('-p', '--passwords', nargs='*')
     parser.add_argument('-k', '--keys', nargs='*')
