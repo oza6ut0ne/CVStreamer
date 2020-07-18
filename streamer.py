@@ -15,6 +15,10 @@ from SimpleHTTPSAuthServer import ThreadedHTTPSAuthServer, AuthHandler
 
 sys.path.insert(0, str(Path(__file__).resolve().parent / 'extra_filter'))
 
+ENV_USERS = 'CVSTREAMER_USERS'
+ENV_PASSWORDS = 'CVSTREAMER_PASSWORDS'
+ENV_KEYS = 'CVSTREAMER_KEYS'
+
 
 class CamHandler(AuthHandler):
     def __init__(self, request, client_address, server):
@@ -193,6 +197,12 @@ def serve_https(path, bind=None, port=8000, users=None, passwords=None,
     server.serve_forever()
 
 
+def split_or_none(val):
+    if val is None:
+        return None
+    return val.split(' ')
+
+
 if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser(
@@ -200,9 +210,12 @@ if __name__ == '__main__':
     parser.add_argument('path', help='camera number or filepath or url')
     parser.add_argument('port', nargs='?', type=int, default=8000)
     parser.add_argument('-b', '--bind', metavar='ADDRESS')
-    parser.add_argument('-u', '--users', nargs='*')
-    parser.add_argument('-p', '--passwords', nargs='*')
-    parser.add_argument('-k', '--keys', nargs='*')
+    parser.add_argument('-u', '--users', nargs='*',
+                        default=split_or_none(os.getenv(ENV_USERS)))
+    parser.add_argument('-p', '--passwords', nargs='*',
+                        default=split_or_none(os.getenv(ENV_PASSWORDS)))
+    parser.add_argument('-k', '--keys', nargs='*',
+                        default=split_or_none(os.getenv(ENV_KEYS)))
     parser.add_argument('-s', '--servercert')
     parser.add_argument('-c', '--cacert')
     parser.add_argument('-f', '--fps', type=float)
