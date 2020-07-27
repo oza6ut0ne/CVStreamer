@@ -1,6 +1,7 @@
+import time
+
 import cv2
 import numpy as np
-import time
 
 class Filter(object):
     '''detects motions with cv2.BackgroundSubtractorMOG2'''

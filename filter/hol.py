@@ -1,3 +1,6 @@
+import itertools
+import time
+
 import cv2
 import numpy as np
 
@@ -13,11 +16,15 @@ class Filter(object):
             self.band_scale = int(params[0])
         except (KeyError, ValueError, IndexError):
             self.band_scale = 1
+        try:
+            self.velocity = int(params[1])
+        except (KeyError, ValueError, IndexError):
+            self.velocity = -1
 
-        self.frame_count = 0
         self.band_dark = 2 * self.band_scale
         self.band_bright = 3 * self.band_scale
         self.band_length = self.band_dark + self.band_bright
+        self.cycle_counter = itertools.cycle(range(self.band_length))
 
     def shift_image(self, img, dx, dy):
         img = np.roll(img, dy, axis=0)
@@ -33,9 +40,11 @@ class Filter(object):
         return img
 
     def apply(self, img):
-        self.frame_count += 1
         holo = cv2.applyColorMap(img, cv2.COLORMAP_WINTER)
-        offset_y = self.frame_count % self.band_length
+        if self.velocity == -1:
+            offset_y = next(self.cycle_counter)
+        else:
+            offset_y = int(time.time() * self.velocity) % self.band_length
         for y in range(holo.shape[0] - offset_y):
             if y % self.band_length < self.band_dark:
                 holo[y + offset_y] = holo[y + offset_y] * np.random.uniform(0.1, 0.3)
