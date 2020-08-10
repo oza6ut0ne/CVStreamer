@@ -11,6 +11,9 @@ HTTPS Motion JPEG streaming server for Python3 with OpenCV.
 ### Quick start
 
 ```sh
+# Install requirments.
+$ pip install SimpleHTTPSAuthServer opencv-python
+
 # Use camera 0.
 $ python streamer.py 0
 ```
